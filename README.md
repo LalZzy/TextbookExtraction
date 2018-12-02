@@ -4,5 +4,5 @@ Using pdfminer, a python library, to extract key concept from StatisticalModels,
 run
 
 ```shell
-python parse_statistical_models.py.
+python parse_statistical_models.py
 ```
