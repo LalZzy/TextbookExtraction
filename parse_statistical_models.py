@@ -107,6 +107,7 @@ def find_word_page_from_text(word,textbook):
     #   textbook: dict。 教材dict。
     
     # statistical一书的列表中，第一页对应textbook[12],textbook[11:11+695]
+    # 这里要根据书籍来调整。
     is_in_pages = [word in x['text'] for x in textbook['Pages'][12:(12+695)]]  
     word_pages = np.arange(1,695+1)[is_in_pages] 
     # 检查单词是否在书中出现过，没有则报错。
