@@ -22,7 +22,7 @@ def export_as_json(pdf_path, json_path):
     counter = 1
     for page in extract_text_by_page(pdf_path):
         text = re.sub("\x0c",' ',page)
-        page = {'Page_{}'.format(counter): text}
+        page = {'Page_number':counter ,'text': text.lower()}
         data['Pages'].append(page)
         counter += 1
  

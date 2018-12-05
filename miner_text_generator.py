@@ -14,6 +14,8 @@ from pdfminer.pdfinterp import PDFPageInterpreter
 from pdfminer.pdfinterp import PDFResourceManager
 from pdfminer.pdfpage import PDFPage
 from pdfminer.layout import LAParams
+from pdfminer.pdfparser import PDFParser
+from pdfminer.pdfdocument import PDFDocument
 import re
 def extract_text_by_page(pdf_path):
     with open(pdf_path, 'rb') as fh:
@@ -41,8 +43,7 @@ def extract_text(pdf_path):
         result.append(re.sub("\x0c",' ',page))
     return result
 
-from pdfminer.pdfparser import PDFParser
-from pdfminer.pdfdocument import PDFDocument
+
 # Open a PDF document.
 def extract_outline(pdf_path):
     fp = open(pdf_path, 'rb')
