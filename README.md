@@ -3,6 +3,8 @@ Using pdfminer, a python library, to extract key concept from StatisticalModels,
 
 run scripts to install required packages.
 
+required python version: python3
+
 ```shell
 pip install -c requirement.txt
 ```
