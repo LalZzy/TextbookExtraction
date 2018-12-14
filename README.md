@@ -6,7 +6,7 @@ run scripts to install required packages.
 required python version: python3
 
 ```shell
-pip install -c requirement.txt
+pip install -r requirement.txt
 ```
 
 Then run
