@@ -4,7 +4,8 @@ Created on Thu Nov 29 20:53:55 2018
 
 @author: Travis
 """
-
+import logging
+logging.basicConfig(level=logging.WARN)
 from miner_text_generator import extract_text, extract_outline
 from json_exporter import export_as_json
 import re
@@ -138,7 +139,7 @@ class TextBook(object):
             key_concept_dict[key] = list(set(value))
         return key_concept_dict 
 
-    def find_word_page_from_text(self,word,textbook,frequency=True):
+    def find_word_page_from_text(self,word_lst,textbook,frequency=True):
         # function: 给定一个单词，返回它在教材中出现的页码。
         # input:
         #   word: str。待查询单词。
@@ -148,41 +149,45 @@ class TextBook(object):
         # returns: list。概念对应出现的页码。如：[1,1,4,5,6]。
         # statistical一书的列表中，第一页对应textbook[12],textbook[11:11+695]
         # 这里要根据书籍来调整。
-        document_nums = self.document_end_page - self.document_st_page +1
-        documents = textbook['Pages'][self.document_st_page:(self.document_st_page+document_nums)]
-        if not frequency:
-            is_in_pages = [word in x['text'] for x in documents]
-            word_pages = np.arange(1,document_nums+1)[is_in_pages] 
-        else:
-            # '(' ,')'是正则表达式中的元字符，所以要把查询pattern中的'('替换为'\('
-            word = word.replace('(','\(').replace(')','\)')
-            word_pages_fre = [len(re.findall(word,x['text'])) for x in documents]
-            word_pages = []
-            for i,num in enumerate(word_pages_fre):
-                word_pages.extend([i+1]*num)
+        res = []
+        for word in word_lst:
+            document_nums = self.document_end_page - self.document_st_page +1
+            documents = textbook['Pages'][self.document_st_page:(self.document_st_page+document_nums)]
+            if not frequency:
+                is_in_pages = [word in x['text'] for x in documents]
+                word_pages = np.arange(1,document_nums+1)[is_in_pages]
+            else:
+                # '(' ,')'是正则表达式中的元字符，所以要把查询pattern中的'('替换为'\('
+                word = word.replace('(','\(').replace(')','\)')
+                word_pages_fre = [len(re.findall(word,x['text'])) for x in documents]
+                word_pages = []
+                for i,num in enumerate(word_pages_fre):
+                    word_pages.extend([i+1]*num)
 
-        if type(word_pages) != list:
-            word_pages = word_pages.tolist()
-        return word_pages
+            if type(word_pages) != list:
+                word_pages = word_pages.tolist()
+            res.extend(word_pages)
+        return res
 
 
-    def find_single_word(self,word,key_concept_dict,outlines,textbook,use_index=True):
+    def find_single_word(self,word,word_lst,key_concept_dict,outlines,textbook,use_index=True):
         # function: 给定一个单词及它出现过的页码，返回这个单词所在章节。
         # input: 
-        #   word: str。单词
+        #   word: word_dict。单词
         #   key_concept_dict: dict。关键词字典。
         #   outlines: match_outline_page函数返回的大纲dict。
         #   use_index: 是否使用index页中的概念页码信息。
         #   textbook:
         # return: a dict。
-        
         # 如果这个词在key_concept_dict(index)中，就取key_concept_dict[word]，否则
         # 从文本中做遍历，寻找这个词对应的页码
+        all_word_names = word_lst
+        logging.warning('{} is {}'.format(word,all_word_names))
         is_key_word = word in key_concept_dict
         if is_key_word and use_index:
             word_page_list = key_concept_dict[word]
         else:
-            word_page_list = self.find_word_page_from_text(word,textbook)
+            word_page_list = self.find_word_page_from_text(all_word_names,textbook)
         
         if not word_page_list:
             return {'concept':word,'info':{'chapter':None,
@@ -205,26 +210,33 @@ class TextBook(object):
                 
         return result
 
-
-if __name__ == '__main__':
+def main():
     bookname = 'StatisticalModels'
     # 生成一个TextBook类的示例，各页码参数由具体的书籍给出。
-    textbook = TextBook(bookname,outline_st_page=6,outline_end_page=8,
-                        document_st_page=12,document_end_page=706,
-                        index_st_page=729,index_end_page=737)
+    textbook = TextBook(bookname, outline_st_page=6, outline_end_page=8,
+                        document_st_page=12, document_end_page=706,
+                        index_st_page=729, index_end_page=737)
     # 载入教科书解析完成的json文件。
-    text_json = textbook.load_json(bookname+'.json')
+    text_json = textbook.load_json(bookname + '.json')
     pages_number = textbook.determin_title_page(text_json)
-    outlines = extract_outline(bookname+'.pdf')
+    outlines = extract_outline(bookname + '.pdf')
     # 生成层级大纲词典。
-    outlines = textbook.match_outline_page(outlines,pages_number)
+    outlines = textbook.match_outline_page(outlines, pages_number)
     # 获取关键词
     key_concept_dict = textbook.parse_key_concept_page(text_json)
+    with open('data/raw_concept/all_concepts.json','r') as f:
+        all_concepts = json.load(f)
     # 返回关键词所在章节及页码
     key_chapter = []
-    for concept in key_concept_dict.keys():
-        key_chapter.append(textbook.find_single_word(concept,key_concept_dict,outlines,text_json,use_index=False))
+    for word,word_lst in all_concepts.items():
+        try:
+            key_chapter.append(textbook.find_single_word(word,word_lst, key_concept_dict, outlines, text_json, use_index=False))
+        except:
+            logging.error('{} failed.'.format(word))
+            continue
     print(key_chapter[:5])
-    with open('word_info_'+bookname+'.json','w') as outputf:
-        json.dump(key_chapter,outputf)
-    # determin_title_page('StatisticalModels.pdf')
+    with open('all_word_info_' + bookname + '.json', 'w') as outputf:
+        json.dump(key_chapter, outputf)
+
+if __name__ == '__main__':
+    main()
