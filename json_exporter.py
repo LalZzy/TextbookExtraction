@@ -28,6 +28,8 @@ def export_as_json(pdf_path, json_path):
  
     with open(json_path, 'w') as fh:
         json.dump(data, fh)
+
+
  
 if __name__ == '__main__':
     pdf_path = 'StatisticalModels.pdf'
