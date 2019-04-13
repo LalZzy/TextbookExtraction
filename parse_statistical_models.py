@@ -12,6 +12,7 @@ import re
 import json
 import os
 import numpy as np
+from datetime import datetime
 
 #result = extract_text('StatisticalModels.pdf')
 
@@ -178,11 +179,11 @@ class TextBook(object):
         #   outlines: match_outline_page函数返回的大纲dict。
         #   use_index: 是否使用index页中的概念页码信息。
         #   textbook:
+        #   return_chapter=False。
         # return: a dict。
         # 如果这个词在key_concept_dict(index)中，就取key_concept_dict[word]，否则
         # 从文本中做遍历，寻找这个词对应的页码
         all_word_names = word_lst
-        logging.warning('{} is {}'.format(word,all_word_names))
         is_key_word = word in key_concept_dict
         if is_key_word and use_index:
             word_page_list = key_concept_dict[word]
@@ -197,25 +198,43 @@ class TextBook(object):
         else:
             #print(word)
             result = {'concept':word,'info':{'page':list(word_page_list)}}
-            for i in ['chapters','subchapters']:
-                chapter_pages = np.array(outlines[i]['page'])
-                concept_chapters = np.zeros((len(word_page_list),),dtype=np.int)
-                for j,word_page in enumerate(word_page_list):
-                    concept_chapters[j] = np.argmax(chapter_pages>word_page)-1
-                    #print('word_page:{}. chapter_page:{}'.format(word_page,chapter_pages[np.argmax(chapter_pages>word_page)-1]))
-                concept_chapters[concept_chapters == -1] = len(chapter_pages)-1
-                chapter_idx = np.argmax(np.bincount(concept_chapters))
-                chapter = outlines[i]['chapter'][chapter_idx]
-                result['info'].setdefault(i,chapter)
-                
+            try:
+                for i in ['chapters','subchapters']:
+                    chapter_pages = np.array(outlines[i]['page'])
+                    concept_chapters = np.zeros((len(word_page_list),),dtype=np.int)
+                    for j,word_page in enumerate(word_page_list):
+                        concept_chapters[j] = np.argmax(chapter_pages>word_page)-1
+                        #print('word_page:{}. chapter_page:{}'.format(word_page,chapter_pages[np.argmax(chapter_pages>word_page)-1]))
+                    concept_chapters[concept_chapters == -1] = len(chapter_pages)-1
+                    chapter_idx = np.argmax(np.bincount(concept_chapters))
+                    chapter = outlines[i]['chapter'][chapter_idx]
+                    result['info'].setdefault(i,chapter)
+            except:
+                result['info'].update({'chapter':None,'subchapter':None})
         return result
 
+
+conf = {
+    'name': 'StatisticalModels',
+    'outline_st_page':6,
+    'outline_end_page':8,
+    'document_st_page':12,
+    'document_end_page':706,
+    'index_st_page':729,
+    'index_end_page':737
+}
+
 def main():
-    bookname = 'StatisticalModels'
-    # 生成一个TextBook类的示例，各页码参数由具体的书籍给出。
-    textbook = TextBook(bookname, outline_st_page=6, outline_end_page=8,
-                        document_st_page=12, document_end_page=706,
-                        index_st_page=729, index_end_page=737)
+    st = datetime.now()
+    bookname = conf['name']
+    #生成一个TextBook类的示例，各页码参数由具体的书籍给出。
+    textbook = TextBook(bookname, outline_st_page=conf['outline_st_page'], outline_end_page=conf['outline_end_page'],
+                        document_st_page=conf['document_st_page'], document_end_page=conf['document_end_page'],
+                        index_st_page=conf['index_st_page'], index_end_page=conf['index_end_page'])
+    # bookname = 'cateregression'
+    # textbook = TextBook('cateregression', outline_st_page=6, outline_end_page=9,
+    #                     document_st_page=12, document_end_page=495,
+    #                     index_st_page=565, index_end_page=572)
     # 载入教科书解析完成的json文件。
     text_json = textbook.load_json(bookname + '.json')
     pages_number = textbook.determin_title_page(text_json)
@@ -231,12 +250,15 @@ def main():
     for word,word_lst in all_concepts.items():
         try:
             key_chapter.append(textbook.find_single_word(word,word_lst, key_concept_dict, outlines, text_json, use_index=False))
-        except:
-            logging.error('{} failed.'.format(word))
+        except Exception as e:
+            logging.error('{} failed. reason: {}'.format(word,e))
             continue
+    print('\n\nPlease examine the first five concepts\'s outputs below in the origin textbook.\n')
     print(key_chapter[:5])
     with open('all_word_info_' + bookname + '.json', 'w') as outputf:
         json.dump(key_chapter, outputf)
+    ed = datetime.now()
+    logging.warning('finished, cost total {} seconds'.format((ed-st).total_seconds()))
 
 if __name__ == '__main__':
     main()
