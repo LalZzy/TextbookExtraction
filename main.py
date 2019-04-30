@@ -13,7 +13,8 @@ import json
 import os
 import numpy as np
 from datetime import datetime
-
+from conf import TextbookInfoConfig
+from concurrent.futures import ThreadPoolExecutor
 #result = extract_text('StatisticalModels.pdf')
 
 class TextBook(object):
@@ -59,12 +60,9 @@ class TextBook(object):
         # 这里是因为page:[1,2,3,4,1,15,15……],真正的页码是从1,15,15开始的。
         res = res[start_position:]
         for i in range(len(res)-1):
-            #print('compare {} with {}'.format(current_value,int(res[i+1])))
             if current_value<=int(res[i+1]):
-                #print('yes!')
                 page.append(int(res[i+1]))
                 current_value = int(res[i+1])
-        print(page)
         return page
 
     def load_json(self,file_path):
@@ -152,6 +150,8 @@ class TextBook(object):
         # 这里要根据书籍来调整。
         res = []
         for word in word_lst:
+            # 排除单词是''的情况
+            if not word: continue
             document_nums = self.document_end_page - self.document_st_page +1
             documents = textbook['Pages'][self.document_st_page:(self.document_st_page+document_nums)]
             if not frequency:
@@ -160,7 +160,7 @@ class TextBook(object):
             else:
                 # '(' ,')'是正则表达式中的元字符，所以要把查询pattern中的'('替换为'\('
                 word = word.replace('(','\(').replace(')','\)')
-                word_pages_fre = [len(re.findall(word,x['text'])) for x in documents]
+                word_pages_fre = [len(re.findall(' {} '.format(word),x['text'])) for x in documents]
                 word_pages = []
                 for i,num in enumerate(word_pages_fre):
                     word_pages.extend([i+1]*num)
@@ -171,7 +171,7 @@ class TextBook(object):
         return res
 
 
-    def find_single_word(self,word,word_lst,key_concept_dict,outlines,textbook,use_index=True):
+    def find_single_word(self,word,word_lst,outlines,textbook,use_index=True):
         # function: 给定一个单词及它出现过的页码，返回这个单词所在章节。
         # input: 
         #   word: word_dict。单词
@@ -184,11 +184,7 @@ class TextBook(object):
         # 如果这个词在key_concept_dict(index)中，就取key_concept_dict[word]，否则
         # 从文本中做遍历，寻找这个词对应的页码
         all_word_names = word_lst
-        is_key_word = word in key_concept_dict
-        if is_key_word and use_index:
-            word_page_list = key_concept_dict[word]
-        else:
-            word_page_list = self.find_word_page_from_text(all_word_names,textbook)
+        word_page_list = self.find_word_page_from_text(all_word_names,textbook)
         
         if not word_page_list:
             return {'concept':word,'info':{'chapter':None,
@@ -198,6 +194,7 @@ class TextBook(object):
         else:
             #print(word)
             result = {'concept':word,'info':{'page':list(word_page_list)}}
+            #import pdb;pdb.set_trace()
             try:
                 for i in ['chapters','subchapters']:
                     chapter_pages = np.array(outlines[i]['page'])
@@ -208,10 +205,12 @@ class TextBook(object):
                     concept_chapters[concept_chapters == -1] = len(chapter_pages)-1
                     chapter_idx = np.argmax(np.bincount(concept_chapters))
                     chapter = outlines[i]['chapter'][chapter_idx]
-                    result['info'].setdefault(i,chapter)
+                    result['info'].update({i,chapter})
+                return result
             except:
                 result['info'].update({'chapter':None,'subchapter':None})
-        return result
+                return result
+            #import pdb;pdb.set_trace()
 
 
 conf = {
@@ -224,41 +223,61 @@ conf = {
     'index_end_page':737
 }
 
-def main():
+def deal_one(conf):
+    pdf_path = 'data/textbook_txt'
+    op_path = 'data/concept_page'
     st = datetime.now()
     bookname = conf['name']
+    logging.warning('task for book: {} begin!'.format(bookname))
     #生成一个TextBook类的示例，各页码参数由具体的书籍给出。
     textbook = TextBook(bookname, outline_st_page=conf['outline_st_page'], outline_end_page=conf['outline_end_page'],
                         document_st_page=conf['document_st_page'], document_end_page=conf['document_end_page'],
                         index_st_page=conf['index_st_page'], index_end_page=conf['index_end_page'])
-    # bookname = 'cateregression'
-    # textbook = TextBook('cateregression', outline_st_page=6, outline_end_page=9,
-    #                     document_st_page=12, document_end_page=495,
-    #                     index_st_page=565, index_end_page=572)
     # 载入教科书解析完成的json文件。
-    text_json = textbook.load_json(bookname + '.json')
+    text_json = textbook.load_json('{}/{}.json'.format(pdf_path,bookname))
     pages_number = textbook.determin_title_page(text_json)
-    outlines = extract_outline(bookname + '.pdf')
+    try:
+        outlines = extract_outline('{}/{}.pdf'.format(pdf_path,bookname))
+        #import pdb;pdb.set_trace()
+    except:
+        outlines = list()
     # 生成层级大纲词典。
     outlines = textbook.match_outline_page(outlines, pages_number)
-    # 获取关键词
-    key_concept_dict = textbook.parse_key_concept_page(text_json)
-    with open('data/raw_concept/all_concepts.json','r') as f:
+    with open('data/all_concepts.json','r') as f:
         all_concepts = json.load(f)
     # 返回关键词所在章节及页码
     key_chapter = []
     for word,word_lst in all_concepts.items():
         try:
-            key_chapter.append(textbook.find_single_word(word,word_lst, key_concept_dict, outlines, text_json, use_index=False))
+            key_chapter.append(textbook.find_single_word(word,word_lst,  outlines, text_json, use_index=False))
+            #import pdb;pdb.set_trace()
         except Exception as e:
             logging.error('{} failed. reason: {}'.format(word,e))
             continue
     print('\n\nPlease examine the first five concepts\'s outputs below in the origin textbook.\n')
-    print(key_chapter[:5])
-    with open('all_word_info_' + bookname + '.json', 'w') as outputf:
+    k = 0
+    for key in key_chapter:
+        if key.get('info').get('page'):
+            print(key)
+            k += 1
+        if k == 5:
+            break
+    with open('{}/all_word_info_{}.json'.format(op_path,bookname), 'w') as outputf:
         json.dump(key_chapter, outputf)
     ed = datetime.now()
     logging.warning('finished, cost total {} seconds'.format((ed-st).total_seconds()))
+
+def main():
+    confs = TextbookInfoConfig().configs
+    print(confs)
+    st = datetime.now()
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        executor.map(
+            deal_one,
+            confs
+        )
+    ed = datetime.now()
+    logging.warning('Finished all books, cost total {} seconds'.format((ed-st).total_seconds()))
 
 if __name__ == '__main__':
     main()

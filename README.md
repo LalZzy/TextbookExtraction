@@ -9,10 +9,20 @@ required python version: python3
 pip install -r requirement.txt
 ```
 
+make sure you have directories below:
+
+```shell
+data/concept_page
+```
 Then run
 
 ```shell
-python parse_statistical_models.py
+python main.py
+```
+if you want to get (concept, page, number) format, after finishing the last step, run 
+
+```
+python transformer.py
 ```
 
 -----

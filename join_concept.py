@@ -12,7 +12,7 @@ cpts_with_multi_name = set()
 
 class RawConceptDealer(object):
     def __init__(self):
-        self.path = 'data/raw_concept/'
+        self.path = 'data/'
 
     def file_name_reader(self):
         import os
