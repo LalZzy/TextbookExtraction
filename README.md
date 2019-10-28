@@ -11,9 +11,11 @@ pip install -r requirement.txt
 
 make sure the following things:
 
-(1) everybook's key concepts' file exists: `"./data/concept_[bookname].xlsx"`
+(1) directories exist:`"./data/` & `"./data/concept_page/"` & `"./data/textbook_txt/"` 
 
-(2) everybook's pdf_file exists: `"./textbook_txt/[bookname].pdf"`
+(2) everybook's key concepts' file exists: `"./data/concept_[bookname].xlsx"`
+
+(3) everybook's pdf_file exists: `"./data/textbook_txt/[bookname].pdf"`
 
 
 Then run
