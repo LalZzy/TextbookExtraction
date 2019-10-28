@@ -1,5 +1,5 @@
 # TextbookExtraction
-Using pdfminer, a python library, to extract key concept from StatisticalModels, Davision.
+Using pdfminer, a python library, to extract key concept from 9 books.
 
 run scripts to install required packages.
 
@@ -9,23 +9,19 @@ required python version: python3
 pip install -r requirement.txt
 ```
 
-make sure you have directories below:
+make sure the following things:
 
-```shell
-data/concept_page
-```
+(1) everybook's key concepts' file exists: `"./data/concept_[bookname].xlsx"`
+
+(2) everybook's pdf_file exists: `"./textbook_txt/[bookname].pdf"`
+
+
 Then run
 
 ```shell
-python main.py
-```
-if you want to get (concept, page, number) format, after finishing the last step, run 
-
-```
-python transformer.py
+sh main.sh 
 ```
 
------
 
 
 
