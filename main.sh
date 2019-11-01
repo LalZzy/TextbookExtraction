@@ -9,3 +9,6 @@ python main.py
 python transformer.py
 # output:
 #   concept_page/result_all_word_info_[bookname].csv
+python readygo.py
+# output:
+#   finals/[bookname]_final.csv
