@@ -20,7 +20,7 @@ class Transformer(object):
             return [(word_name,page,fre) for page,fre in frequency.items()]
 
     def store_output(self,output):
-        with open(self.path + 'result_'+self.textbook_name.replace('.json','') +'.csv','w+') as f:
+        with open(self.path + 'result_'+self.textbook_name.replace('.json','') +'.csv','w+', encoding = "utf-8") as f:
             for record in output:
                 f.write(record[0]+','+str(record[1])+','+str(record[2])+'\r')
 

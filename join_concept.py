@@ -21,6 +21,7 @@ class RawConceptDealer(object):
         return filenames
 
     def file_reader(self,file_name):
+        #import pdb;pdb.set_trace()
         data = xlrd.open_workbook(file_name)
         table = data.sheets()[0]
         data_list = []
@@ -94,7 +95,6 @@ class RawConceptDealer(object):
 def main():
     dealer = RawConceptDealer()
     concepts = dealer.run()
-    #import pdb;pdb.set_trace()
     return concepts
 
 if __name__ == '__main__':

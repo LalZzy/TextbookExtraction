@@ -212,20 +212,11 @@ class TextBook(object):
                 return result
             #import pdb;pdb.set_trace()
 
-
-conf = {
-    'name': 'StatisticalModels',
-    'outline_st_page':6,
-    'outline_end_page':8,
-    'document_st_page':12,
-    'document_end_page':706,
-    'index_st_page':729,
-    'index_end_page':737
-}
-
 def deal_one(conf):
     pdf_path = 'data/textbook_txt'
     op_path = 'data/concept_page'
+    if not os.path.exists(op_path):
+	os.mkdir(op_path)
     st = datetime.now()
     bookname = conf['name']
     logging.warning('task for book: {} begin!'.format(bookname))
@@ -236,6 +227,7 @@ def deal_one(conf):
     # 载入教科书解析完成的json文件。
     text_json = textbook.load_json('{}/{}.json'.format(pdf_path,bookname))
     pages_number = textbook.determin_title_page(text_json)
+    print(bookname,pages_number)
     try:
         outlines = extract_outline('{}/{}.pdf'.format(pdf_path,bookname))
         #import pdb;pdb.set_trace()

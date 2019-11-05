@@ -37,6 +37,8 @@ class TextbookInfoConfig(object):
             'index_st_page': 714,
             'index_end_page': 729
         },
+        '''
+        目前本书暂无
         {
             'name': 'cateregression',
             'outline_st_page': 6,
@@ -46,6 +48,7 @@ class TextbookInfoConfig(object):
             'index_st_page': 565,
             'index_end_page': 572
         },
+        ''' 
         {
             'name': 'RegressionModelingStrategies',
             'outline_st_page': 15,
@@ -81,6 +84,15 @@ class TextbookInfoConfig(object):
             'document_end_page': 645,
             'index_st_page': 715,
             'index_end_page': 724
+        }, 
+        {
+            'name': 'DeepLearning',
+            'outline_st_page': 1,
+            'outline_end_page': 7,
+            'document_st_page': 15,
+            'document_end_page': 737,
+            'index_st_page': 794,
+            'index_end_page': 801
         }
 
     ]
