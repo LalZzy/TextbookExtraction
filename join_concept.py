@@ -3,12 +3,13 @@ import xlrd
 import logging
 logging.basicConfig(level=logging.INFO)
 import sys
-import os
+import os,re
 from collections import defaultdict
 import json
 
 cpts_with_single_name = set()
 cpts_with_multi_name = set()
+inverted_index = defaultdict(list)
 
 class RawConceptDealer(object):
     def __init__(self):
@@ -31,9 +32,9 @@ class RawConceptDealer(object):
         return data_list
 
 
-    def deal_one_book(self,cpt_lists):
-        # 把概念按照是否有多个名字分别存储。
-        global cpts_with_single_name,cpts_with_multi_name
+    def deal_one_book(self,file_name,cpt_lists):
+        # 把概念按照是否有多个名字分别存储。同时生成一份 书名-概念名 的正排表与倒排表，方便查阅。
+        global cpts_with_single_name,cpts_with_multi_name, inverted_index
         one_name_output,multi_name_output = dict(),dict()
         textbooks = set()
         for cpt_list in cpt_lists:
@@ -41,6 +42,8 @@ class RawConceptDealer(object):
             concepts = [i for i in cpt_list if i]
             concepts = ','.join(concepts)
             concepts = concepts.lower().split(',')
+            for concept in concepts:
+                inverted_index[concept].append(re.search('_(.*)\.',file_name).group(1))
             textbooks = textbooks.union(concepts)
             if len(concepts) == 1:
                 cpts_with_single_name = cpts_with_single_name.union(concepts)
@@ -65,8 +68,10 @@ class RawConceptDealer(object):
         concept_dict.update(output['concepts_multi_name'])
         with open(self.path+'all_concepts.json','w') as f:
             json.dump(concept_dict,f)
-        with open(self.path+'concepts_in_textbooks.json', 'w') as g:
-            json.dump(output['textbook'],g)
+        with open(self.path+'book_concepts_forward_index.json', 'w') as f:
+            json.dump(output['textbook'],f)
+        with open(self.path+'book_concepts_inversed_index.json','w') as f:
+            json.dump(inverted_index,f)
         logging.info('write concept to json file, total %d concepts'%len(concept_dict))
         return
 
@@ -78,7 +83,7 @@ class RawConceptDealer(object):
                   'textbook':dict()}
         for file_name in file_names:
             cpt_lists = self.file_reader(self.path+file_name)
-            a,b,c = self.deal_one_book(cpt_lists)
+            a,b,c = self.deal_one_book(file_name,cpt_lists)
             output['concepts_one_name'].update(a)
             output['concepts_multi_name'].update(b)
             output['textbook'].setdefault(file_name.replace('.xlsx',''),c)

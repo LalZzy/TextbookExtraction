@@ -37,18 +37,16 @@ class TextbookInfoConfig(object):
             'index_st_page': 714,
             'index_end_page': 729
         },
-        '''
-        目前本书暂无
-        {
-            'name': 'cateregression',
-            'outline_st_page': 6,
-            'outline_end_page': 9,
-            'document_st_page': 12,
-            'document_end_page': 495,
-            'index_st_page': 565,
-            'index_end_page': 572
-        },
-        ''' 
+        # 目前本书暂无
+        # {
+        #     'name': 'cateregression',
+        #     'outline_st_page': 6,
+        #     'outline_end_page': 9,
+        #     'document_st_page': 12,
+        #     'document_end_page': 495,
+        #     'index_st_page': 565,
+        #     'index_end_page': 572
+        # },
         {
             'name': 'RegressionModelingStrategies',
             'outline_st_page': 15,
